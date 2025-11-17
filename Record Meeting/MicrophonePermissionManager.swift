@@ -15,7 +15,13 @@ class MicrophonePermissionManager {
     /// Request microphone permission (macOS shows system prompt)
     func requestMicrophonePermission(completion: @escaping (Bool) -> Void) {
         // Create a temporary audio recorder to trigger the system permission prompt
-        let tempURL = URL(fileURLWithPath: "/tmp/mic_test_\(UUID().uuidString).m4a")
+        guard let tempURL = getTempRecordingURL() else {
+            print("❌ Could not create temp recording URL")
+            DispatchQueue.main.async {
+                completion(false)
+            }
+            return
+        }
         
         let settings: [String: Any] = [
             AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
@@ -29,15 +35,18 @@ class MicrophonePermissionManager {
             // Try to record - this will trigger the permission prompt if needed
             let canRecord = recorder.record()
             
-            // Stop and clean up
+            // Stop immediately
             recorder.stop()
-            try FileManager.default.removeItem(at: tempURL)
             
+            // Give system time to process
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                // Clean up temp file
+                try? FileManager.default.removeItem(at: tempURL)
                 completion(canRecord)
             }
         } catch {
             print("❌ Microphone permission check failed: \(error.localizedDescription)")
+            try? FileManager.default.removeItem(at: tempURL)
             DispatchQueue.main.async {
                 completion(false)
             }
@@ -46,7 +55,10 @@ class MicrophonePermissionManager {
     
     /// Check microphone access by attempting to create a recorder
     private func checkMicrophoneAccess() -> Bool {
-        let tempURL = URL(fileURLWithPath: "/tmp/mic_check_\(UUID().uuidString).m4a")
+        guard let tempURL = getTempRecordingURL() else {
+            print("❌ Could not create temp recording URL")
+            return false
+        }
         
         let settings: [String: Any] = [
             AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
@@ -60,10 +72,29 @@ class MicrophonePermissionManager {
             let canRecord = recorder.record()
             recorder.stop()
             try? FileManager.default.removeItem(at: tempURL)
+            print("✅ Microphone check passed - can record: \(canRecord)")
             return canRecord
         } catch {
             print("❌ Microphone check error: \(error.localizedDescription)")
+            try? FileManager.default.removeItem(at: tempURL)
             return false
+        }
+    }
+    
+    /// Get a temporary recording URL in the Documents/Meetings folder (within sandbox)
+    private func getTempRecordingURL() -> URL? {
+        do {
+            let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            let meetingsFolder = documentsURL.appendingPathComponent("Meetings")
+            
+            // Create Meetings folder if it doesn't exist
+            try FileManager.default.createDirectory(at: meetingsFolder, withIntermediateDirectories: true)
+            
+            let tempFileName = "mic_check_\(UUID().uuidString).m4a"
+            return meetingsFolder.appendingPathComponent(tempFileName)
+        } catch {
+            print("❌ Failed to create temp recording URL: \(error.localizedDescription)")
+            return nil
         }
     }
 }
