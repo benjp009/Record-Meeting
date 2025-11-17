@@ -74,7 +74,12 @@ class RecordingState: ObservableObject {
     // MARK: - Recording Management
     
     func loadRecordings() {
-        recordings = audioRecorder.getAllRecordings()
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let loadedRecordings = self?.audioRecorder.getAllRecordings() ?? []
+            DispatchQueue.main.async {
+                self?.recordings = loadedRecordings
+            }
+        }
     }
     
     func deleteRecording(_ recording: Recording) {
