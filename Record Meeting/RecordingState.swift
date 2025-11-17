@@ -14,7 +14,6 @@ class RecordingState: ObservableObject {
     
     private let audioRecorder = AudioRecorder.shared
     private let audioPlayer = AudioPlayer.shared
-    private let permissionManager = MicrophonePermissionManager.shared
     private var timer: Timer?
     private var recordingStartTime: Date?
     private var playbackTimer: Timer?
@@ -29,30 +28,10 @@ class RecordingState: ObservableObject {
     // MARK: - Recording Control
     
     func startRecording() {
-        // Check microphone permission first
-        if !permissionManager.hasMicrophonePermission() {
-            print("⚠️ Microphone permission not granted, requesting...")
-            permissionManager.requestMicrophonePermission { [weak self] granted in
-                if granted {
-                    print("✅ Microphone permission granted!")
-                    DispatchQueue.main.async {
-                        self?.startRecordingInternal()
-                    }
-                } else {
-                    print("❌ Microphone permission denied")
-                    DispatchQueue.main.async {
-                        self?.errorMessage = "Microphone permission denied. Please allow microphone access in System Settings > Security & Privacy."
-                    }
-                }
-            }
-        } else {
-            startRecordingInternal()
-        }
-    }
-    
-    private func startRecordingInternal() {
         let timestamp = ISO8601DateFormatter().string(from: Date())
         let filename = "Meeting_\(timestamp).m4a"
+        
+        print("🎙️ Attempting to start recording: \(filename)")
         
         if audioRecorder.startRecording(filename: filename) {
             isRecording = true
@@ -61,8 +40,10 @@ class RecordingState: ObservableObject {
             recordingStartTime = Date()
             startTimer()
             errorMessage = nil
+            print("✅ Recording started successfully")
         } else {
-            errorMessage = "Failed to start recording"
+            errorMessage = "Failed to start recording. Check microphone permissions in System Settings > Security & Privacy."
+            print("❌ Recording failed to start")
         }
     }
     
