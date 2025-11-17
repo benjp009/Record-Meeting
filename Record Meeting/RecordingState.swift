@@ -85,6 +85,17 @@ class RecordingState: ObservableObject {
         }
     }
     
+    func renameRecording(_ recording: Recording, newName: String) {
+        // Ensure filename has .m4a extension
+        let finalName = newName.hasSuffix(".m4a") ? newName : "\(newName).m4a"
+        
+        if let newURL = audioRecorder.renameRecording(url: recording.url, newName: finalName) {
+            loadRecordings()
+        } else {
+            errorMessage = "Failed to rename recording"
+        }
+    }
+    
     // MARK: - Playback Control
     
     func playRecording(_ recording: Recording) {

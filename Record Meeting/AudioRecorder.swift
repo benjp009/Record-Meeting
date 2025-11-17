@@ -171,6 +171,26 @@ class AudioRecorder: NSObject, AVAudioRecorderDelegate {
         }
     }
     
+    /// Rename a recording file
+    func renameRecording(url: URL, newName: String) -> URL? {
+        do {
+            let newURL = url.deletingLastPathComponent().appendingPathComponent(newName)
+            
+            // Prevent overwriting existing files
+            if FileManager.default.fileExists(atPath: newURL.path) {
+                print("❌ File already exists: \(newName)")
+                return nil
+            }
+            
+            try FileManager.default.moveItem(at: url, to: newURL)
+            print("✅ Recording renamed: \(url.lastPathComponent) → \(newName)")
+            return newURL
+        } catch {
+            print("❌ Failed to rename recording: \(error.localizedDescription)")
+            return nil
+        }
+    }
+    
     // MARK: - Helper Methods
     
     private func formatFileSize(_ bytes: Int) -> String {

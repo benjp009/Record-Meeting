@@ -2,6 +2,9 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var recordingState = RecordingState()
+    @State private var showRenameSheet = false
+    @State private var selectedRecording: Recording?
+    @State private var newRecordingName = ""
     
     var body: some View {
         ZStack {
@@ -78,6 +81,9 @@ struct ContentView: View {
         }
         .onAppear {
             recordingState.loadRecordings()
+        }
+        .sheet(isPresented: $showRenameSheet) {
+            renameSheet
         }
     }
     
@@ -204,6 +210,17 @@ struct ContentView: View {
                                 }
                                 .buttonStyle(.plain)
                                 
+                                // Rename button
+                                Button(action: {
+                                    selectedRecording = recording
+                                    newRecordingName = recording.filename.replacingOccurrences(of: ".m4a", with: "")
+                                    showRenameSheet = true
+                                }) {
+                                    Image(systemName: "pencil")
+                                        .foregroundColor(.gray)
+                                }
+                                .buttonStyle(.plain)
+                                
                                 // Open in Finder button
                                 Button(action: {
                                     recordingState.openRecordingInFinder(recording)
@@ -247,8 +264,43 @@ struct ContentView: View {
             return String(format: "%02d:%02d", minutes, secs)
         }
     }
+    
+    // MARK: - Rename Sheet
+    
+    @ViewBuilder
+    private var renameSheet: some View {
+        VStack(spacing: 20) {
+            Text("Rename Recording")
+                .font(.system(size: 18, weight: .semibold))
+            
+            TextField("New name", text: $newRecordingName)
+                .textFieldStyle(.roundedBorder)
+                .padding()
+            
+            HStack(spacing: 12) {
+                Button("Cancel") {
+                    showRenameSheet = false
+                    selectedRecording = nil
+                    newRecordingName = ""
+                }
+                .buttonStyle(.bordered)
+                
+                Button("Rename") {
+                    if let recording = selectedRecording, !newRecordingName.trimmingCharacters(in: .whitespaces).isEmpty {
+                        recordingState.renameRecording(recording, newName: newRecordingName)
+                        showRenameSheet = false
+                        selectedRecording = nil
+                        newRecordingName = ""
+                    }
+                }
+                .buttonStyle(.bordered)
+                .tint(.blue)
+            }
+            
+            Spacer()
+        }
+        .padding()
+        .frame(width: 300, height: 200)
+    }
 }
-
-// Preview disabled - causes crashes in Xcode 15+
-// Use the running app to test instead
 
