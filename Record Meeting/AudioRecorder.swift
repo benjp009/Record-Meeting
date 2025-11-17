@@ -117,25 +117,31 @@ class AudioRecorder: NSObject, AVAudioRecorderDelegate {
             
             let fileURLs = try FileManager.default.contentsOfDirectory(at: meetingsFolder, includingPropertiesForKeys: nil)
             
-            return fileURLs
-                .filter { $0.pathExtension.lowercased() == "m4a" }
-                .compactMap { url -> Recording? in
-                    let attributes = try? FileManager.default.attributesOfItem(atPath: url.path)
-                    let fileSize = attributes?[.size] as? Int ?? 0
-                    let createdAt = attributes?[.creationDate] as? Date ?? Date()
-                    
-                    let asset = AVURLAsset(url: url)
-                    let duration = CMTimeGetSeconds(asset.duration)
-                    
-                    return Recording(
-                        filename: url.lastPathComponent,
-                        url: url,
-                        duration: duration,
-                        fileSize: fileSize,
-                        createdAt: createdAt
-                    )
+            var recordings: [Recording] = []
+            for url in fileURLs where url.pathExtension.lowercased() == "m4a" {
+                let attributes = try? FileManager.default.attributesOfItem(atPath: url.path)
+                let fileSize = attributes?[.size] as? Int ?? 0
+                let createdAt = attributes?[.creationDate] as? Date ?? Date()
+                
+                // Get duration using CMAudioFormatDescriptionCreate
+                let asset = AVURLAsset(url: url)
+                var duration: TimeInterval = 0
+                
+                if let track = asset.tracks(withMediaType: .audio).first {
+                    duration = CMTimeGetSeconds(track.timeRange.duration)
                 }
-                .sorted { $0.createdAt > $1.createdAt }
+                
+                let recording = Recording(
+                    filename: url.lastPathComponent,
+                    url: url,
+                    duration: duration,
+                    fileSize: fileSize,
+                    createdAt: createdAt
+                )
+                recordings.append(recording)
+            }
+            
+            return recordings.sorted { $0.createdAt > $1.createdAt }
         } catch {
             print("❌ Failed to get recordings: \(error.localizedDescription)")
             return []
