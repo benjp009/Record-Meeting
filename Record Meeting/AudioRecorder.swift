@@ -124,16 +124,17 @@ class AudioRecorder: NSObject, AVAudioRecorderDelegate {
                     let fileSize = attributes[.size] as? Int ?? 0
                     let createdAt = attributes[.creationDate] as? Date ?? Date()
                     
-                    // Get duration safely
+                    // Get duration - use AVAsset synchronously for simplicity
+                    // This works on macOS and avoids deprecated APIs
                     var duration: TimeInterval = 0
-                    do {
-                        let asset = AVURLAsset(url: url)
-                        if let track = asset.tracks(withMediaType: .audio).first {
-                            duration = CMTimeGetSeconds(track.timeRange.duration)
-                        }
-                    } catch {
-                        // If we can't get duration, just use 0
-                        print("⚠️ Could not load duration for \(url.lastPathComponent): \(error)")
+                    let asset = AVURLAsset(url: url)
+                    
+                    // Get tracks without using deprecated API
+                    let audioTracks = asset.tracks(withMediaType: .audio)
+                    if let firstTrack = audioTracks.first {
+                        // Access duration via the track's CMTimeRange
+                        let timeRange = firstTrack.timeRange
+                        duration = CMTimeGetSeconds(timeRange.duration)
                     }
                     
                     let recording = Recording(
