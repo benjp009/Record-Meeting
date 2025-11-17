@@ -11,10 +11,5 @@ struct MeetingRecorderApp: App {
                 .frame(minWidth: 800, minHeight: 600)
         }
         .windowStyle(.hiddenTitleBar)
-        
-        MenuBarExtra("Recording", systemImage: "mic.fill") {
-            MenuBarView()
-                .environmentObject(recordingState)
-        }
     }
 }

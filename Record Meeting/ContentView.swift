@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @EnvironmentObject private var recordingState: RecordingState
+    @StateObject private var recordingState = RecordingState()
     @State private var showRenameSheet = false
     @State private var selectedRecording: Recording?
     @State private var newRecordingName = ""
