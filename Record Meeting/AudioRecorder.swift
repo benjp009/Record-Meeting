@@ -1,7 +1,7 @@
 import AVFoundation
 import Foundation
 
-/// Handles audio recording and file management
+/// Handles audio recording and file management for macOS
 class AudioRecorder: NSObject, AVAudioRecorderDelegate {
     static let shared = AudioRecorder()
     
@@ -21,11 +21,6 @@ class AudioRecorder: NSObject, AVAudioRecorderDelegate {
     /// Start recording audio with a given filename
     func startRecording(filename: String) -> Bool {
         do {
-            // Request microphone permission
-            let audioSession = AVAudioSession.sharedInstance()
-            try audioSession.setCategory(.record, mode: .default, options: [])
-            try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
-            
             // Create recording URL
             let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             let meetingsFolder = documentsURL.appendingPathComponent("Meetings")
@@ -36,17 +31,17 @@ class AudioRecorder: NSObject, AVAudioRecorderDelegate {
             recordingURL = meetingsFolder.appendingPathComponent(filename)
             
             guard let recordingURL = recordingURL else {
-                Logger.log("Failed to create recording URL", level: .error)
+                print("❌ Failed to create recording URL")
                 return false
             }
             
-            // Configure audio settings
+            // Configure audio settings for macOS
             let settings: [String: Any] = [
                 AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
-                AVSampleRateKey: AppConfig.Recording.defaultSampleRate,
+                AVSampleRateKey: 44100,
                 AVNumberOfChannelsKey: 2,
                 AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
-                AVEncoderBitRateKey: AppConfig.Recording.defaultBitRate
+                AVEncoderBitRateKey: 128000
             ]
             
             // Create and start recorder
@@ -54,10 +49,10 @@ class AudioRecorder: NSObject, AVAudioRecorderDelegate {
             audioRecorder?.delegate = self
             audioRecorder?.record()
             
-            Logger.log("Recording started: \(filename)", level: .info)
+            print("✅ Recording started: \(filename)")
             return true
         } catch {
-            Logger.log("Failed to start recording: \(error.localizedDescription)", level: .error)
+            print("❌ Failed to start recording: \(error.localizedDescription)")
             return false
         }
     }
@@ -65,14 +60,14 @@ class AudioRecorder: NSObject, AVAudioRecorderDelegate {
     /// Stop recording and return the recording details
     func stopRecording() -> Recording? {
         guard audioRecorder?.isRecording == true else {
-            Logger.log("No active recording to stop", level: .warning)
+            print("⚠️ No active recording to stop")
             return nil
         }
         
         audioRecorder?.stop()
         
         guard let recordingURL = recordingURL else {
-            Logger.log("Recording URL not found", level: .error)
+            print("❌ Recording URL not found")
             return nil
         }
         
@@ -87,24 +82,24 @@ class AudioRecorder: NSObject, AVAudioRecorderDelegate {
             createdAt: Date()
         )
         
-        Logger.log("Recording stopped: \(recording.filename) (\(formatFileSize(fileSize)))", level: .info)
+        print("✅ Recording stopped: \(recording.filename) (\(formatFileSize(fileSize)))")
         return recording
     }
     
     /// Pause recording
     func pauseRecording() {
         audioRecorder?.pause()
-        Logger.log("Recording paused", level: .info)
+        print("⏸️ Recording paused")
     }
     
     /// Resume recording
     func resumeRecording() -> Bool {
         guard audioRecorder?.pause() != nil else {
-            Logger.log("Failed to resume recording", level: .error)
+            print("❌ Failed to resume recording")
             return false
         }
         audioRecorder?.record()
-        Logger.log("Recording resumed", level: .info)
+        print("▶️ Recording resumed")
         return true
     }
     
@@ -142,7 +137,7 @@ class AudioRecorder: NSObject, AVAudioRecorderDelegate {
                 }
                 .sorted { $0.createdAt > $1.createdAt }
         } catch {
-            Logger.log("Failed to get recordings: \(error.localizedDescription)", level: .error)
+            print("❌ Failed to get recordings: \(error.localizedDescription)")
             return []
         }
     }
@@ -151,10 +146,10 @@ class AudioRecorder: NSObject, AVAudioRecorderDelegate {
     func deleteRecording(url: URL) -> Bool {
         do {
             try FileManager.default.removeItem(at: url)
-            Logger.log("Recording deleted: \(url.lastPathComponent)", level: .info)
+            print("✅ Recording deleted: \(url.lastPathComponent)")
             return true
         } catch {
-            Logger.log("Failed to delete recording: \(error.localizedDescription)", level: .error)
+            print("❌ Failed to delete recording: \(error.localizedDescription)")
             return false
         }
     }
@@ -172,7 +167,7 @@ class AudioRecorder: NSObject, AVAudioRecorderDelegate {
     
     func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
         if !flag {
-            Logger.log("Recording failed to finish successfully", level: .error)
+            print("❌ Recording failed to finish successfully")
         }
     }
 }
@@ -207,3 +202,4 @@ struct Recording: Identifiable {
         return formatter.string(from: createdAt)
     }
 }
+
