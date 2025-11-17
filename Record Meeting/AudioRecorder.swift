@@ -124,7 +124,7 @@ class AudioRecorder: NSObject, AVAudioRecorderDelegate {
                     let fileSize = attributes?[.size] as? Int ?? 0
                     let createdAt = attributes?[.creationDate] as? Date ?? Date()
                     
-                    let asset = AVAsset(url: url)
+                    let asset = AVURLAsset(url: url)
                     let duration = CMTimeGetSeconds(asset.duration)
                     
                     return Recording(

@@ -37,7 +37,7 @@ class RecordingState: ObservableObject {
     }
     
     func stopRecording() {
-        if let recording = audioRecorder.stopRecording() {
+        if audioRecorder.stopRecording() != nil {
             isRecording = false
             isPaused = false
             stopTimer()
