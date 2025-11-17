@@ -15,7 +15,10 @@ class RecordingState: ObservableObject {
     private var recordingStartTime: Date?
     
     init() {
-        loadRecordings()
+        // Delay loading recordings to avoid crashes in previews
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            self?.loadRecordings()
+        }
     }
     
     // MARK: - Recording Control

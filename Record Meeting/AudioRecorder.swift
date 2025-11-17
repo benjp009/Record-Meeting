@@ -119,26 +119,35 @@ class AudioRecorder: NSObject, AVAudioRecorderDelegate {
             
             var recordings: [Recording] = []
             for url in fileURLs where url.pathExtension.lowercased() == "m4a" {
-                let attributes = try? FileManager.default.attributesOfItem(atPath: url.path)
-                let fileSize = attributes?[.size] as? Int ?? 0
-                let createdAt = attributes?[.creationDate] as? Date ?? Date()
-                
-                // Get duration using CMAudioFormatDescriptionCreate
-                let asset = AVURLAsset(url: url)
-                var duration: TimeInterval = 0
-                
-                if let track = asset.tracks(withMediaType: .audio).first {
-                    duration = CMTimeGetSeconds(track.timeRange.duration)
+                do {
+                    let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
+                    let fileSize = attributes[.size] as? Int ?? 0
+                    let createdAt = attributes[.creationDate] as? Date ?? Date()
+                    
+                    // Get duration safely
+                    var duration: TimeInterval = 0
+                    do {
+                        let asset = AVURLAsset(url: url)
+                        if let track = asset.tracks(withMediaType: .audio).first {
+                            duration = CMTimeGetSeconds(track.timeRange.duration)
+                        }
+                    } catch {
+                        // If we can't get duration, just use 0
+                        print("⚠️ Could not load duration for \(url.lastPathComponent): \(error)")
+                    }
+                    
+                    let recording = Recording(
+                        filename: url.lastPathComponent,
+                        url: url,
+                        duration: duration,
+                        fileSize: fileSize,
+                        createdAt: createdAt
+                    )
+                    recordings.append(recording)
+                } catch {
+                    print("⚠️ Could not read attributes for \(url.lastPathComponent): \(error)")
+                    continue
                 }
-                
-                let recording = Recording(
-                    filename: url.lastPathComponent,
-                    url: url,
-                    duration: duration,
-                    fileSize: fileSize,
-                    createdAt: createdAt
-                )
-                recordings.append(recording)
             }
             
             return recordings.sorted { $0.createdAt > $1.createdAt }

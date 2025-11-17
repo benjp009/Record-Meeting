@@ -228,7 +228,6 @@ struct ContentView: View {
     }
 }
 
-#Preview {
-    ContentView()
-}
+// Preview disabled - causes crashes in Xcode 15+
+// Use the running app to test instead
 
