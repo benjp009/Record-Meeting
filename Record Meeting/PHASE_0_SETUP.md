@@ -60,11 +60,31 @@ git push -u origin main
 ```
 
 ### Step 3: Set Up Code Signing (for .dmg distribution)
+
+**What is code signing?**  
+Code signing verifies that your app comes from a trusted source and hasn't been tampered with. It's required for distribution.
+
+**Your available identity:**
+```
+Apple Development: patin.benjamin@gmail.com (D6Q9NGWY28)
+```
+
+**To use this for .dmg distribution:**
+
+1. Keep your developer certificate safe (already on your Mac)
+2. The build script (`build.sh`) now includes code signing configuration with your identity
+3. When building releases, the executable will be automatically signed
+
+**View your certificates anytime:**
 ```bash
-# This will be needed in Phase 0 completion
-# Run on macOS with developer account:
 security find-identity -v -p codesigning
 ```
+
+**For distribution:**
+- **Current setup**: Ad-hoc signing with your development certificate (good for testers)
+- **App Store release** (future): Would require a different certificate type (contact Apple Developer)
+
+Your identity is already configured in `build.sh` — no additional action needed for Phase 0!
 
 ### Step 4: Local Build Test
 ```bash
