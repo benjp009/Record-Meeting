@@ -41,7 +41,7 @@ class AudioRecorder: NSObject, AVAudioRecorderDelegate {
             let settings: [String: Any] = [
                 AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
                 AVSampleRateKey: 44100,
-                AVNumberOfChannelsKey: 2,
+                AVNumberOfChannelsKey: 1,  // Mono for better compatibility
                 AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
                 AVEncoderBitRateKey: 128000
             ]
@@ -51,6 +51,7 @@ class AudioRecorder: NSObject, AVAudioRecorderDelegate {
             // Create and start recorder
             audioRecorder = try AVAudioRecorder(url: recordingURL, settings: settings)
             audioRecorder?.delegate = self
+            audioRecorder?.isMeteringEnabled = true
             
             print("🎤 AVAudioRecorder created successfully")
             
@@ -58,6 +59,7 @@ class AudioRecorder: NSObject, AVAudioRecorderDelegate {
             
             if recordStarted {
                 print("✅ Recording started: \(filename)")
+                print("🎙️ Recording from microphone... speak now!")
                 return true
             } else {
                 print("❌ AVAudioRecorder.record() failed to start")
