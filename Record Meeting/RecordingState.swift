@@ -9,10 +9,14 @@ class RecordingState: ObservableObject {
     @Published var currentRecordingName: String = ""
     @Published var recordingDuration: TimeInterval = 0
     @Published var errorMessage: String?
+    @Published var isPlaying = false
+    @Published var currentlyPlayingId: UUID?
     
     private let audioRecorder = AudioRecorder.shared
+    private let audioPlayer = AudioPlayer.shared
     private var timer: Timer?
     private var recordingStartTime: Date?
+    private var playbackTimer: Timer?
     
     init() {
         // Delay loading recordings to avoid crashes in previews
@@ -81,6 +85,37 @@ class RecordingState: ObservableObject {
         }
     }
     
+    // MARK: - Playback Control
+    
+    func playRecording(_ recording: Recording) {
+        // Stop any currently playing recording
+        if isPlaying {
+            stopPlayback()
+        }
+        
+        if audioPlayer.play(url: recording.url) {
+            isPlaying = true
+            currentlyPlayingId = recording.id
+            startPlaybackTimer()
+        } else {
+            errorMessage = "Failed to play recording"
+        }
+    }
+    
+    func stopPlayback() {
+        audioPlayer.stop()
+        isPlaying = false
+        currentlyPlayingId = nil
+        stopPlaybackTimer()
+    }
+    
+    func openRecordingInFinder(_ recording: Recording) {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+        process.arguments = ["-R", recording.url.path]
+        try? process.run()
+    }
+    
     // MARK: - Timer Management
     
     private func startTimer() {
@@ -96,7 +131,25 @@ class RecordingState: ObservableObject {
         timer = nil
     }
     
+    private func startPlaybackTimer() {
+        playbackTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+            // Update UI if needed - playback state will be reflected in the UI
+            if self?.audioPlayer.isPlaying == false {
+                self?.isPlaying = false
+                self?.currentlyPlayingId = nil
+                self?.stopPlaybackTimer()
+            }
+        }
+    }
+    
+    private func stopPlaybackTimer() {
+        playbackTimer?.invalidate()
+        playbackTimer = nil
+    }
+    
     deinit {
         stopTimer()
+        stopPlaybackTimer()
+        stopPlayback()
     }
 }

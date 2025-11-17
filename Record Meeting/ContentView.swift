@@ -182,10 +182,6 @@ struct ContentView: View {
                                     .lineLimit(1)
                                 
                                 HStack(spacing: 12) {
-                                    Label(recording.formattedDuration, systemImage: "clock")
-                                        .font(.system(size: 12, weight: .regular))
-                                        .foregroundColor(.secondary)
-                                    
                                     Label(recording.formattedFileSize, systemImage: "doc")
                                         .font(.system(size: 12, weight: .regular))
                                         .foregroundColor(.secondary)
@@ -194,13 +190,38 @@ struct ContentView: View {
                             
                             Spacer()
                             
-                            Button(action: {
-                                recordingState.deleteRecording(recording)
-                            }) {
-                                Image(systemName: "trash.fill")
-                                    .foregroundColor(.red)
+                            HStack(spacing: 8) {
+                                // Play button
+                                Button(action: {
+                                    if recordingState.currentlyPlayingId == recording.id && recordingState.isPlaying {
+                                        recordingState.stopPlayback()
+                                    } else {
+                                        recordingState.playRecording(recording)
+                                    }
+                                }) {
+                                    Image(systemName: recordingState.currentlyPlayingId == recording.id && recordingState.isPlaying ? "stop.fill" : "play.fill")
+                                        .foregroundColor(.blue)
+                                }
+                                .buttonStyle(.plain)
+                                
+                                // Open in Finder button
+                                Button(action: {
+                                    recordingState.openRecordingInFinder(recording)
+                                }) {
+                                    Image(systemName: "folder.fill")
+                                        .foregroundColor(.gray)
+                                }
+                                .buttonStyle(.plain)
+                                
+                                // Delete button
+                                Button(action: {
+                                    recordingState.deleteRecording(recording)
+                                }) {
+                                    Image(systemName: "trash.fill")
+                                        .foregroundColor(.red)
+                                }
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
                         }
                         .padding(12)
                         .background(Color(nsColor: .controlBackgroundColor))
