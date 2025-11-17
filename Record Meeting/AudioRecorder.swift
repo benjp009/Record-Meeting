@@ -35,6 +35,8 @@ class AudioRecorder: NSObject, AVAudioRecorderDelegate {
                 return false
             }
             
+            print("📍 Recording path: \(recordingURL.path)")
+            
             // Configure audio settings for macOS
             let settings: [String: Any] = [
                 AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
@@ -44,15 +46,26 @@ class AudioRecorder: NSObject, AVAudioRecorderDelegate {
                 AVEncoderBitRateKey: 128000
             ]
             
+            print("📋 Recording settings: \(settings)")
+            
             // Create and start recorder
             audioRecorder = try AVAudioRecorder(url: recordingURL, settings: settings)
             audioRecorder?.delegate = self
-            audioRecorder?.record()
             
-            print("✅ Recording started: \(filename)")
-            return true
+            print("🎤 AVAudioRecorder created successfully")
+            
+            let recordStarted = audioRecorder?.record() ?? false
+            
+            if recordStarted {
+                print("✅ Recording started: \(filename)")
+                return true
+            } else {
+                print("❌ AVAudioRecorder.record() failed to start")
+                return false
+            }
         } catch {
             print("❌ Failed to start recording: \(error.localizedDescription)")
+            print("❌ Error details: \(error)")
             return false
         }
     }
